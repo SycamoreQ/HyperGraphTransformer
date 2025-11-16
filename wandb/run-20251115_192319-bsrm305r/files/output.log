@@ -1,1 +1,2 @@
 --- Starting Training ---
+Epoch 01 | train loss 1.1670 acc 0.5278 f1 0.3686 | val loss 1.4559 acc 0.3197 f1 0.1368 | 75284.7s
