@@ -1,114 +1,118 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import numpy as np
-from torch_geometric.nn import GPSConv , global_mean_pool , GCNConv , GATConv , SAGEConv
-from functools import partial
-from DeepHypergraph.SHSL.src import hypergraph_learner
-from sklearn.cluster import KMeans
-import numpy as np
-from DeepHypergraph import Hypergraph
-from GraphGPS.graphgps.encoder.kernel_pos_encoder import RWSENodeEncoder
-from hyp_model import hypergraph_to_edge_index
+from torch_geometric.data import Data, Batch
+from torch_geometric.nn import SAGEConv, global_mean_pool
+from encoder import PatchEmbed
+from graph_creation import DenseDilatedKnnGraph
+from hypergraph import construct_hyperedges_from_features, hyperedges_to_edge_index
 
-class PatchEmbed(nn.Module):
-    """
-    Patch embedding block based on: "Hatamizadeh et al.,
-    FasterViT: Fast Vision Transformers with Hierarchical Attention
-    """
+def build_knn_edge_index_from_features(x_nodes, k=12, dilation=1):
+    # x_nodes: [N, D]
+    # DenseDilatedKnnGraph expects [B, D, N, 1]
+    B = 1
+    N, D = x_nodes.shape
+    x4 = x_nodes.t().unsqueeze(0).unsqueeze(-1).contiguous()     # [1, D, N, 1]
+    knn = DenseDilatedKnnGraph(k=k, dilation=dilation)
+    edge_idx_dense = knn(x4)                                     # [2, B, N, k]
+    nn_idx = edge_idx_dense[0, 0]                                # [N, k]
+    ctr_idx = edge_idx_dense[1, 0]                               # [N, k] (0..N-1)
+    src = ctr_idx.reshape(-1)
+    dst = nn_idx.reshape(-1)
+    edge_index = torch.stack([src, dst], dim=0)                  # [2, N*k]
+    return edge_index
 
-    def __init__(self, in_chans=3, in_dim=64, dim=96):
-        """
-        Args:
-            in_chans: number of input channels.
-            dim: feature size dimension.
-        """
+class GNNBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, dropout=0.1):
         super().__init__()
-        self.proj = nn.Identity()
-        self.conv_down = nn.Sequential(
-            nn.Conv2d(in_chans, in_dim, 3, 2, 1, bias=False),
-            nn.BatchNorm2d(in_dim, eps=1e-4),
-            nn.ReLU(),
-            nn.Conv2d(in_dim, dim, 3, 2, 1, bias=False),
-            nn.BatchNorm2d(dim, eps=1e-4),
-            nn.ReLU()
-            )
+        self.conv = SAGEConv(in_ch, out_ch)
+        self.norm = nn.BatchNorm1d(out_ch)
+        self.drop = nn.Dropout(dropout)
 
-    def forward(self, x):
-        x = self.proj(x)
-        x = self.conv_down(x)
+    def forward(self, x, edge_index):
+        x = self.conv(x, edge_index)
+        x = F.relu(x, inplace=True)
+        x = self.norm(x)
+        x = self.drop(x)
         return x
 
+class HyperVisionNet(nn.Module):
+    def __init__(
+        self,
+        num_classes=2,
+        in_chans=3,
+        patch_embed_dim=96,
+        gnn_hidden=128,
+        gnn_layers=3,
+        k=12,
+        dilation=1,
+        use_hyperedges=True,
+        num_clusters=8,
+        hyper_threshold=0.5,
+        dropout=0.2,
+    ):
+        super().__init__()
+        self.embed = PatchEmbed(in_chans=in_chans, in_dim=64, dim=patch_embed_dim)
+        self.k = k
+        self.dilation = dilation
+        self.use_hyper = use_hyperedges
+        self.num_clusters = num_clusters
+        self.hyper_thr = hyper_threshold
+
+        blocks = []
+        cin = patch_embed_dim
+        for _ in range(gnn_layers):
+            blocks.append(GNNBlock(cin, gnn_hidden, dropout=dropout))
+            cin = gnn_hidden
+        self.blocks = nn.ModuleList(blocks)
+        self.head = nn.Sequential(
+            nn.Linear(gnn_hidden, gnn_hidden),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(gnn_hidden, num_classes),
+        )
+
+    def _image_to_graph(self, img, y=None):
+        # img: [3, H, W] -> features [C, h, w] -> nodes [N, C]
     
-def cal_similarity_graph(node_embeddings):
-    normalized_embeddings = node_embeddings / torch.norm(node_embeddings, dim=1, keepdim=True)
-    similarity_graph = torch.mm(normalized_embeddings, normalized_embeddings.t())
-    return similarity_graph  #HW*HW
-
-class att_hgraph_learner(nn.Module):
-    def __init__(self, features, fea_dim, num_clusters, num_layers , hidden_channels , out_channels , dim_emb ,  args):
-        super(att_hgraph_learner, self).__init__()
-        self.layers = nn.ModuleList()
-        self.features = features
-        self.feat_dim = fea_dim 
-        self.num_cluster = num_clusters
-        self.args = args 
-        self.dim_emb = dim_emb
+        device = img.device
         
-        self.node_enc = RWSENodeEncoder(dim_emb= dim_emb , expand_x= True)
+        feat = self.embed(img.unsqueeze(0)).squeeze(0)           # [C, h, w]
+        C, h, w = feat.shape
+        x_nodes = feat.permute(1, 2, 0).reshape(h * w, C).contiguous()  # [N, C]
         
-        self.GPS = nn.ModuleList()
-        for _ in range(num_layers):
-            self.convs.append(
-                GPSConv(
-                    channels=hidden_channels,  # Use hidden_channels here
-                    heads=3,
-                    conv=GCNConv(hidden_channels, hidden_channels),  # Instantiate GCNConv directly
-                    act='relu',
-                    norm='layernorm',
-                    attn_type='multihead',
-                    dropout=0.1
-                )
-            )
-
-        self.lin1 = nn.Linear(hidden_channels , hidden_channels)
-        self.lin2 = nn.Linear(hidden_channels , out_channels)
-
-    def forward(self , x ):
-        B , C , H , W = x.shape 
-
-        num_nodes = H*W
-        node_emb = self.node_enc(x)
-
-        print("Node enc" , node_emb)
-        similarity = cal_similarity_graph(node_emb) 
-        node_features = node_emb.flatten(2).transpose(1 ,2)
-        H = Hypergraph.from_feature_kNN(similarity.detach().cpu(), self.num_clusters)
-
-        outputs = []
-        for b in range(B):
-            edge_index = hypergraph_to_edge_index(similarity , num_nodes )
-        for conv in self.convs:
-            x_conv = conv(x_conv ,edge_index )
-
-        if x_conv.dim() > 1 and x_conv.size(0) > 1:
-            x_conv = global_mean_pool(x_conv , torch.zeros(x_conv.size(0) , dtype = torch.long , device = x_conv.device))
-        else:
-            x_conv = x_conv.unsqueeze(0)
-
-        outputs.append(x_conv)
-
-        x = torch.cat(outputs , dim = 0)
-
-        x = F.relu(self.lin1(x))
-        x = self.lin2(x)
-
-        return x
-    
-
-
+        edge_index = build_knn_edge_index_from_features(x_nodes, k=self.k, dilation=self.dilation)
+        
+        if self.use_hyper:
+            # These functions likely return CPU tensors
+            hypers, _, _ = construct_hyperedges_from_features(x_nodes, num_clusters=self.num_clusters, threshold=self.hyper_thr)
+            hyper_edges = hyperedges_to_edge_index(hypers, num_nodes=x_nodes.size(0))
             
+            if hyper_edges.numel() > 0:
+                hyper_edges = hyper_edges.to(device)
 
+                edge_index = torch.cat([edge_index, hyper_edges], dim=1)
+                edge_index = torch.unique(edge_index.t(), dim=0).t().contiguous()
+        
+        data = Data(x=x_nodes, edge_index=edge_index, y=y)
+        return data
 
+    def forward_graph(self, batch):
+        # batch: PyG Batch with .x, .edge_index, .batch
+        x, edge_index, b_ix = batch.x, batch.edge_index, batch.batch
+        for blk in self.blocks:
+            x = blk(x, edge_index)
+        g = global_mean_pool(x, b_ix)
+        logits = self.head(g)
+        return logits
 
+    def forward(self, images, labels=None):
+        # images: [B, 3, H, W]
+        data_list = []
+        for i in range(images.size(0)):
+            y = labels[i].view(1) if labels is not None else None
+            data = self._image_to_graph(images[i], y=y)
+            data_list.append(data)
+        batch = Batch.from_data_list(data_list)
+        logits = self.forward_graph(batch)
+        return logits

@@ -13,12 +13,12 @@ class LaplacianPositionalEncoding(nn.Module):
         self.dim = dim
         self.normalized = normalized
         
-        # Calculate grid size
+
         self.grid_h = img_size // patch_size
         self.grid_w = img_size // patch_size
         self.num_patches = self.grid_h * self.grid_w
         
-        # Initialize projection layer properly
+
         self.projection = nn.Linear(min(self.num_patches, dim), dim)
         
         # Compute Laplacian (moved to forward to handle dynamic sizes)

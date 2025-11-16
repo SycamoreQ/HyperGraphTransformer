@@ -1,0 +1,102 @@
+_wandb:
+    value:
+        cli_version: 0.23.0
+        e:
+            5nvzj21njvewnbrsgdjihnaulr4s5q3g:
+                apple:
+                    ecpuCores: 6
+                    gpuCores: 10
+                    memoryGb: 16
+                    name: Apple M4
+                    pcpuCores: 4
+                    ramTotalBytes: "17179869184"
+                    swapTotalBytes: "6442450944"
+                args:
+                    - --data_dir
+                    - /Users/kaushikmuthukumar/Downloads/archive/Training
+                    - --wandb
+                    - --use_hyperedges
+                codePath: dataloader.py
+                codePathLocal: dataloader.py
+                cpu_count: 10
+                cpu_count_logical: 10
+                disk:
+                    /:
+                        total: "494384795648"
+                        used: "135320784896"
+                email: kaushik.80405@gmail.com
+                executable: /Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/.venv/bin/python
+                git:
+                    commit: 942dff3b34dbae7e3295bb02bc92ba5b8369c88e
+                    remote: https://github.com/SycamoreQ/HyperGraphTransformer.git
+                host: Kaushiks-MacBook-Air.local
+                memory:
+                    total: "17179869184"
+                os: macOS-15.7.1-arm64-arm-64bit-Mach-O
+                program: /Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/dataloader.py
+                python: CPython 3.13.6
+                root: /Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer
+                startedAt: "2025-11-15T13:51:13.102027Z"
+                writerId: 5nvzj21njvewnbrsgdjihnaulr4s5q3g
+        m: []
+        python_version: 3.13.6
+        t:
+            "1":
+                - 1
+                - 5
+                - 41
+                - 53
+                - 77
+            "2":
+                - 1
+                - 5
+                - 41
+                - 53
+                - 77
+            "3":
+                - 1
+                - 16
+            "4": 3.13.6
+            "5": 0.23.0
+            "12": 0.23.0
+            "13": darwin-arm64
+batch_size:
+    value: 2
+data_dir:
+    value: /Users/kaushikmuthukumar/Downloads/archive/Training
+device:
+    value: mps
+dilation:
+    value: 1
+dropout:
+    value: 0.2
+epochs:
+    value: 20
+hidden:
+    value: 64
+hyper_threshold:
+    value: 0.5
+img_size:
+    value: 224
+k:
+    value: 12
+layers:
+    value: 3
+lr:
+    value: 0.0001
+num_clusters:
+    value: 8
+patch_dim:
+    value: 64
+run_name:
+    value: ""
+seed:
+    value: 42
+use_hyperedges:
+    value: true
+wandb:
+    value: true
+wandb_project:
+    value: vision-hypergraph-mri
+weight_decay:
+    value: 0.01

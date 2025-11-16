@@ -51,9 +51,9 @@ class hyp_model_1(nn.Module):
         for _ in range(num_layers):
             self.convs.append(
                 GPSConv(
-                    channels=hidden_channels,  # Use hidden_channels here
+                    channels=hidden_channels,  
                     heads=5,
-                    conv=GCNConv(hidden_channels, hidden_channels),  # Instantiate GCNConv directly
+                    conv=GCNConv(hidden_channels, hidden_channels),  
                     act='relu',
                     norm='layernorm',
                     attn_type='multihead',
@@ -67,7 +67,7 @@ class hyp_model_1(nn.Module):
         self.lin1 = nn.Linear(hidden_channels, hidden_channels)
         self.lin2 = nn.Linear(hidden_channels, out_channels)
         
-    def forward(self, x):  # Removed batch_size argument
+    def forward(self, x):  
         batch_size, channels, h, w = x.shape
 
         hyperedge_matrix, point_hyperedge_index, hyperedge_features, patch_positions, (h, w), x_embed , centers = self.hypergraph_model(x)
@@ -86,20 +86,19 @@ class hyp_model_1(nn.Module):
             
             features = node_features[b]
 
-            x_conv = features  # Initialize x_conv with features
+            x_conv = features  
             for conv in self.convs:
                 x_conv = conv(x_conv_1, edge_index)
                 
             if x_conv.dim() > 1 and x_conv.size(0) > 1:
                 x_conv = global_mean_pool(x_conv, torch.zeros(x_conv.size(0), dtype=torch.long, device=x_conv.device))  # Provide batch tensor
             else:
-                x_conv = x_conv.unsqueeze(0)  # Ensure correct dimensions for concatenation
+                x_conv = x_conv.unsqueeze(0)  
             outputs.append(x_conv)
 
 
         x = torch.cat(outputs, dim=0)
 
-        # Apply final layers
         x = F.relu(self.lin1(x))
         x = self.lin2(x)
 

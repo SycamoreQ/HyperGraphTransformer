@@ -1,0 +1,11 @@
+{"time":"2025-11-15T19:21:13.383804+05:30","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-11-15T19:21:13.800859+05:30","level":"INFO","msg":"stream: created new stream","id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:13.800917+05:30","level":"INFO","msg":"handler: started","stream_id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:13.801046+05:30","level":"INFO","msg":"stream: started","id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:13.801056+05:30","level":"INFO","msg":"writer: started","stream_id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:13.801066+05:30","level":"INFO","msg":"sender: started","stream_id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:19.830183+05:30","level":"INFO","msg":"stream: closing","id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:21.627287+05:30","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-11-15T19:21:22.02345+05:30","level":"INFO","msg":"handler: closed","stream_id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:22.023609+05:30","level":"INFO","msg":"sender: closed","stream_id":"qqmz35kp"}
+{"time":"2025-11-15T19:21:22.023615+05:30","level":"INFO","msg":"stream: closed","id":"qqmz35kp"}
