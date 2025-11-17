@@ -33,10 +33,10 @@ pip install torch-geometric
 pip install wandb matplotlib pillow opencv-python
 
 - Step 4 : Train the Model
-# Set environment variable for necessary MPS fallbacks (for Apple Silicon)
+- Set environment variable for necessary MPS fallbacks (for Apple Silicon)
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 
-# Run the training script with recommended parameters
+- Run the training script with recommended parameters
 python dataloader.py \
   --data_dir "/path/to/your/dataset" \
   --wandb \
