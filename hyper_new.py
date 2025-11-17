@@ -97,16 +97,18 @@ class HyperVisionNet(nn.Module):
         data = Data(x=x_nodes, edge_index=edge_index, y=y)
         return data
 
-    def forward_graph(self, batch):
+    def forward_graph(self, batch , return_cam_features=False):
         # batch: PyG Batch with .x, .edge_index, .batch
         x, edge_index, b_ix = batch.x, batch.edge_index, batch.batch
         for blk in self.blocks:
             x = blk(x, edge_index)
         g = global_mean_pool(x, b_ix)
         logits = self.head(g)
+        if return_cam_features:
+            return logits, x
         return logits
 
-    def forward(self, images, labels=None):
+    def forward(self, images, labels=None , return_cam_features=False):
         # images: [B, 3, H, W]
         data_list = []
         for i in range(images.size(0)):
@@ -114,5 +116,9 @@ class HyperVisionNet(nn.Module):
             data = self._image_to_graph(images[i], y=y)
             data_list.append(data)
         batch = Batch.from_data_list(data_list)
+
+        if return_cam_features:
+            logits, x_features = self.forward_graph(batch, return_cam_features=True)
+            return logits, x_features
         logits = self.forward_graph(batch)
         return logits

@@ -70,9 +70,6 @@ def maybe_init_wandb(args, model):
         print(f"W&B init failed: {e}")
         return None
 
-# -----------------------------------------------------------------
-# CORRECTED GRADIENT ACCUMULATION FUNCTION
-# -----------------------------------------------------------------
 def train_one_epoch(model, loader, optimizer, device, num_classes, wandb_ref=None):
     ACCUMULATION_STEPS = 4
     model.train()
@@ -114,16 +111,14 @@ def train_one_epoch(model, loader, optimizer, device, num_classes, wandb_ref=Non
                            "train/acc_step": acc,
                            "train/f1_step": f1})
             
-        # BUG FIX 2 (cont.): Removed the incorrect `if (i + 1) % ACCUMULATION_STEPS != 0:` block
 
-    # BUG FIX 4: Add final step for leftover gradients
+
     if (i + 1) % ACCUMULATION_STEPS != 0:
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
 
     return total_loss / count, total_acc / count, total_f1 / count
-# -----------------------------------------------------------------
 
 @torch.no_grad()
 def evaluate(model, loader, device, num_classes, split="val", wandb_ref=None):
@@ -159,9 +154,6 @@ def main():
     parser.add_argument("--weight_decay", type=float, default=1e-2)
     parser.add_argument("--seed", type=int, default=42)
 
-    # -----------------------------------------------------------------
-    # BUG FIX 5: Added device auto-detection
-    # -----------------------------------------------------------------
     if torch.backends.mps.is_available():
         default_device = "mps"
     elif torch.cuda.is_available():
@@ -185,6 +177,7 @@ def main():
     parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--wandb_project", type=str, default="vision-hypergraph-mri")
     parser.add_argument("--run_name", type=str, default="")
+    parser.add_argument("--model_weights", type=str, default="best_hypervision.pt")
     args = parser.parse_args()
 
     set_seed(args.seed)

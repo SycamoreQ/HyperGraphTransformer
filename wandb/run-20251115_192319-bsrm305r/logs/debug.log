@@ -20,3 +20,5 @@ config: {'data_dir': '/Users/kaushikmuthukumar/Downloads/archive/Training', 'img
 2025-11-15 19:23:21,091 INFO    MainThread:77019 [wandb_run.py:_redirect():2444] Redirects installed.
 2025-11-15 19:23:21,092 INFO    MainThread:77019 [wandb_init.py:init():1080] run started, returning control to user process
 2025-11-15 19:23:21,092 INFO    MainThread:77019 [wandb_watch.py:_watch():68] Watching
+2025-11-16 21:18:12,851 INFO    wandb-AsyncioManager-main:77019 [service_client.py:_forward_responses():80] Reached EOF.
+2025-11-16 21:18:12,853 INFO    wandb-AsyncioManager-main:77019 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.

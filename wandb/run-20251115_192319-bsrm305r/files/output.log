@@ -1,2 +1,40 @@
 --- Starting Training ---
 Epoch 01 | train loss 1.1670 acc 0.5278 f1 0.3686 | val loss 1.4559 acc 0.3197 f1 0.1368 | 75284.7s
+Traceback (most recent call last):
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/dataloader.py", line 247, in <module>
+    main()
+    ~~~~^^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/dataloader.py", line 233, in main
+    tr_loss, tr_acc, tr_f1 = train_one_epoch(model, train_loader, optimizer, device, num_classes, wandb_ref)
+                             ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/dataloader.py", line 94, in train_one_epoch
+    loss.backward()
+    ~~~~~~~~~~~~~^^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/.venv/lib/python3.13/site-packages/torch/_tensor.py", line 625, in backward
+    torch.autograd.backward(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        self, gradient, retain_graph, create_graph, inputs=inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/.venv/lib/python3.13/site-packages/torch/autograd/__init__.py", line 354, in backward
+    _engine_run_backward(
+    ~~~~~~~~~~~~~~~~~~~~^
+        tensors,
+        ^^^^^^^^
+    ...<5 lines>...
+        accumulate_grad=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/.venv/lib/python3.13/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+  File "/Users/kaushikmuthukumar/Documents/projects/HyperGraphTransformer/.venv/lib/python3.13/site-packages/wandb/integration/torch/wandb_torch.py", line 276, in <lambda>
+    handle = var.register_hook(lambda grad: _callback(grad, log_track))
+
+KeyboardInterrupt
